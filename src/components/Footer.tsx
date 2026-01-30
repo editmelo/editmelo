@@ -25,7 +25,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-12 mb-12">
           {/* Brand */}
           <div>
-            <img src={logo} alt="Edit Me Lo" className="h-12 mb-4 brightness-0 invert" />
+            <img src={logo} alt="Edit Me Lo" className="h-12 mb-4" />
             <p className="text-background/70 max-w-xs">
               Professional website design for small businesses. Affordable, fast, and built to help you grow.
             </p>

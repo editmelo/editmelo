@@ -42,7 +42,7 @@ const Pricing = () => {
       <div className="container">
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-accent font-semibold text-sm uppercase tracking-wider">
+          <span className="text-accent font-semibold text-base md:text-lg uppercase tracking-wider">
             Simple Pricing
           </span>
           <h2 className="font-heading text-4xl md:text-5xl text-foreground mt-3 mb-6">
