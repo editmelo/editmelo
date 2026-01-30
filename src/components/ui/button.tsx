@@ -16,8 +16,8 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Hero CTA buttons
-        hero: "bg-gradient-hero text-primary-foreground shadow-elevated hover:shadow-glow hover:scale-105 active:scale-95 font-heading uppercase tracking-wide",
-        heroOutline: "border-2 border-accent bg-transparent text-accent hover:bg-accent hover:text-accent-foreground hover:scale-105 active:scale-95 font-heading uppercase tracking-wide",
+        hero: "bg-gradient-hero text-primary-foreground shadow-elevated hover:shadow-glow hover:scale-105 active:scale-95 font-heading font-normal uppercase tracking-widest",
+        heroOutline: "border-2 border-accent bg-transparent text-accent hover:bg-accent hover:text-accent-foreground hover:scale-105 active:scale-95 font-heading font-normal uppercase tracking-widest",
         // Accent buttons
         accent: "bg-accent text-accent-foreground shadow-soft hover:shadow-elevated hover:scale-105 active:scale-95",
         accentOutline: "border-2 border-accent bg-transparent text-accent hover:bg-accent hover:text-accent-foreground",

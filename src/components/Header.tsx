@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
@@ -17,6 +18,7 @@ const Header = () => {
 
   const navLinks = [
     { href: "#services", label: "Services" },
+    { href: "#about", label: "About" },
     { href: "#pricing", label: "Pricing" },
     { href: "#process", label: "How It Works" },
     { href: "#testimonials", label: "Reviews" },
@@ -46,9 +48,11 @@ const Header = () => {
               {link.label}
             </a>
           ))}
-          <Button variant="hero" size="default" asChild>
-            <a href="#contact">Get Started</a>
-          </Button>
+          <LeadCaptureModal>
+            <Button variant="hero" size="default">
+              Get Started
+            </Button>
+          </LeadCaptureModal>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -75,11 +79,11 @@ const Header = () => {
                 {link.label}
               </a>
             ))}
-            <Button variant="hero" size="lg" className="mt-2" asChild>
-              <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>
+            <LeadCaptureModal>
+              <Button variant="hero" size="lg" className="mt-2" onClick={() => setIsMobileMenuOpen(false)}>
                 Get Started
-              </a>
-            </Button>
+              </Button>
+            </LeadCaptureModal>
           </div>
         </nav>
       )}
