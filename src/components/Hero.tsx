@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 
 const Hero = () => {
   const benefits = [
@@ -54,12 +55,12 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
-            <Button variant="hero" size="xl" asChild>
-              <a href="#contact">
-                Get Your Free Quote
+            <LeadCaptureModal>
+              <Button variant="hero" size="xl">
+                Get Started
                 <ArrowRight className="ml-2" />
-              </a>
-            </Button>
+              </Button>
+            </LeadCaptureModal>
             <Button variant="outline" size="xl" asChild>
               <a href="#pricing">View Pricing</a>
             </Button>

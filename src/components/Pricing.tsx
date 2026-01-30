@@ -1,5 +1,6 @@
 import { Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 
 const Pricing = () => {
   const websiteFeatures = [
@@ -79,9 +80,11 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <Button variant="hero" size="xl" className="w-full" asChild>
-                <a href="#contact">Get Started Today</a>
-              </Button>
+              <LeadCaptureModal>
+                <Button variant="hero" size="xl" className="w-full">
+                  Get Started Today
+                </Button>
+              </LeadCaptureModal>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 import ceoPhoto from "@/assets/ceo-photo.jpg";
 
 const MeetCEO = () => {
@@ -46,16 +47,12 @@ const MeetCEO = () => {
               ))}
             </ul>
 
-            <Button variant="hero" size="xl" asChild>
-              <a
-                href="https://calendar.app.google/ZPDRhjEVzosBdRQQ6"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            <LeadCaptureModal>
+              <Button variant="hero" size="xl">
                 <Calendar className="mr-2 w-5 h-5" />
                 Schedule a Call with Lauren
-              </a>
-            </Button>
+              </Button>
+            </LeadCaptureModal>
           </div>
         </div>
       </div>
