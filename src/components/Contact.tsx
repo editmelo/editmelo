@@ -50,7 +50,7 @@ const Contact = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
           {/* Left side - Info */}
           <div>
-            <span className="text-accent font-semibold text-sm uppercase tracking-wider">
+            <span className="text-accent font-semibold text-base md:text-lg uppercase tracking-wider">
               Let's Talk
             </span>
             <h2 className="font-heading text-4xl md:text-5xl mt-3 mb-6">
@@ -80,7 +80,7 @@ const Contact = () => {
               </a>
 
               <a
-                href="mailto:hello@editmelo.com"
+                href="mailto:info@editmelo.com"
                 className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group"
               >
                 <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -89,7 +89,7 @@ const Contact = () => {
                 <div>
                   <p className="font-semibold">Email Us</p>
                   <p className="text-sm text-primary-foreground/70">
-                    hello@editmelo.com
+                    info@editmelo.com
                   </p>
                 </div>
               </a>
