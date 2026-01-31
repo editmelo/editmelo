@@ -1,3 +1,4 @@
+// Lead capture with spam protection (reCAPTCHA + honeypot + rate limiting)
 import { useState, useEffect, useCallback } from "react";
 import { ArrowRight, Calendar, Building2, User, Mail, Phone, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
