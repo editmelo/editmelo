@@ -62,11 +62,10 @@ const Contact = () => {
 
             {/* Quick actions */}
             <div className="space-y-4 mb-8">
-              <a
-                href="https://calendar.app.google/ZPDRhjEVzosBdRQQ6"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group"
+              <button
+                type="button"
+                onClick={() => window.open("https://calendar.app.google/KzHTeKeMEKbbJ2i7A", "_blank", "noopener,noreferrer")}
+                className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group w-full text-left cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Calendar className="w-6 h-6 text-accent-foreground" />
@@ -77,7 +76,7 @@ const Contact = () => {
                     Book a time that works for you
                   </p>
                 </div>
-              </a>
+              </button>
 
               <a
                 href="mailto:info@editmelo.com"

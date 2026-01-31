@@ -384,15 +384,14 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                 <p className="font-semibold">{formData.companyName}</p>
               </div>
 
-              <Button variant="hero" size="xl" className="w-full" asChild>
-                <a
-                  href="https://calendar.app.google/KzHTeKeMEKbbJ2i7A"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Calendar className="mr-2 w-5 h-5" />
-                  Pick a Time
-                </a>
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="w-full"
+                onClick={() => window.open("https://calendar.app.google/KzHTeKeMEKbbJ2i7A", "_blank", "noopener,noreferrer")}
+              >
+                <Calendar className="mr-2 w-5 h-5" />
+                Pick a Time
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
