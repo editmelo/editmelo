@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowRight, Calendar, Building2, User, Mail, Phone, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,18 +19,93 @@ interface LeadCaptureModalProps {
   buttonVariant?: "hero" | "heroOutline" | "default" | "outline";
 }
 
+// Load reCAPTCHA script
+const loadRecaptchaScript = (siteKey: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== "undefined" && (window as any).grecaptcha) {
+      resolve();
+      return;
+    }
+
+    if (!siteKey) {
+      console.warn("reCAPTCHA site key not available");
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load reCAPTCHA"));
+    document.head.appendChild(script);
+  });
+};
+
 const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<"form" | "schedule">("form");
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
+  const [recaptchaSiteKey, setRecaptchaSiteKey] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     companyName: "",
     companyDescription: "",
+    // Honeypot field - should always be empty
+    website: "",
   });
+
+  // Fetch reCAPTCHA site key when modal opens
+  useEffect(() => {
+    if (isOpen && !recaptchaSiteKey) {
+      supabase.functions.invoke("get-recaptcha-config")
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Failed to fetch reCAPTCHA config:", error);
+            return;
+          }
+          if (data?.siteKey) {
+            setRecaptchaSiteKey(data.siteKey);
+          }
+        });
+    }
+  }, [isOpen, recaptchaSiteKey]);
+
+  // Load reCAPTCHA script when site key is available
+  useEffect(() => {
+    if (isOpen && recaptchaSiteKey && !recaptchaReady) {
+      loadRecaptchaScript(recaptchaSiteKey)
+        .then(() => {
+          setRecaptchaReady(true);
+        })
+        .catch((err) => {
+          console.error("Failed to load reCAPTCHA:", err);
+        });
+    }
+  }, [isOpen, recaptchaSiteKey, recaptchaReady]);
+
+  const getRecaptchaToken = useCallback(async (): Promise<string | null> => {
+    if (!recaptchaSiteKey || !recaptchaReady) {
+      console.warn("reCAPTCHA not available");
+      return null;
+    }
+
+    try {
+      const grecaptcha = (window as any).grecaptcha;
+      if (!grecaptcha) return null;
+
+      const token = await grecaptcha.execute(recaptchaSiteKey, { action: "submit_lead" });
+      return token;
+    } catch (err) {
+      console.error("Failed to get reCAPTCHA token:", err);
+      return null;
+    }
+  }, [recaptchaReady, recaptchaSiteKey]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -46,16 +121,34 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("leads").insert({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        company_name: formData.companyName,
-        company_description: formData.companyDescription,
+      // Get reCAPTCHA token
+      const recaptchaToken = await getRecaptchaToken();
+      
+      if (!recaptchaToken && recaptchaSiteKey) {
+        toast({
+          title: "Security verification failed",
+          description: "Please refresh the page and try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Submit through the secure edge function
+      const { data, error } = await supabase.functions.invoke("submit-lead", {
+        body: {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim() || null,
+          companyName: formData.companyName.trim(),
+          companyDescription: formData.companyDescription.trim(),
+          recaptchaToken: recaptchaToken || "",
+          honeypot: formData.website, // Honeypot field
+        },
       });
 
       if (error) {
-        console.error("Error saving lead:", error);
+        console.error("Error submitting lead:", error);
         toast({
           title: "Something went wrong",
           description: "Please try again or contact us directly.",
@@ -65,22 +158,16 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
         return;
       }
 
-      // Send email notification (non-blocking)
-      supabase.functions.invoke("notify-new-lead", {
-        body: {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          companyName: formData.companyName,
-          companyDescription: formData.companyDescription,
-        },
-      }).then((result) => {
-        if (result.error) {
-          console.error("Email notification failed:", result.error);
-        } else {
-          console.log("Email notification sent successfully");
-        }
-      });
+      if (data?.error) {
+        console.error("Submission error:", data.error);
+        toast({
+          title: "Submission failed",
+          description: data.error,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
       setIsSubmitting(false);
       setStep("schedule");
@@ -112,6 +199,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
           phone: "",
           companyName: "",
           companyDescription: "",
+          website: "",
         });
       }, 300);
     }
@@ -133,6 +221,24 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {/* Honeypot field - hidden from users, bots will fill it */}
+              <div 
+                className="absolute -left-[9999px]" 
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0 }}
+              >
+                <label htmlFor="website">Website</label>
+                <Input
+                  id="website"
+                  name="website"
+                  type="text"
+                  value={formData.website}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-2">
                   <User className="inline w-4 h-4 mr-2" />
@@ -146,6 +252,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   placeholder="John Smith"
                   required
                   className="h-12"
+                  maxLength={100}
                 />
               </div>
 
@@ -163,6 +270,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   placeholder="john@mybusiness.com"
                   required
                   className="h-12"
+                  maxLength={255}
                 />
               </div>
 
@@ -179,6 +287,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   onChange={handleChange}
                   placeholder="(555) 123-4567"
                   className="h-12"
+                  maxLength={20}
                 />
               </div>
 
@@ -195,6 +304,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   placeholder="My Awesome Business"
                   required
                   className="h-12"
+                  maxLength={200}
                 />
               </div>
 
@@ -211,6 +321,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   placeholder="What does your business do? What services do you offer?"
                   required
                   rows={3}
+                  maxLength={2000}
                 />
               </div>
 
@@ -230,6 +341,29 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                   </>
                 )}
               </Button>
+
+              {recaptchaSiteKey && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Protected by reCAPTCHA.{" "}
+                  <a 
+                    href="https://policies.google.com/privacy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Privacy
+                  </a>
+                  {" "}&{" "}
+                  <a 
+                    href="https://policies.google.com/terms" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Terms
+                  </a>
+                </p>
+              )}
             </form>
           </>
         ) : (
