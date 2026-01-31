@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -25,6 +24,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type IntakeStatus = "pending" | "in_progress" | "completed";
+
+const STATUS_CONFIG: Record<IntakeStatus, { label: string; variant: "secondary" | "default" | "outline"; icon: React.ReactNode }> = {
+  pending: { label: "Pending", variant: "secondary", icon: <Clock className="h-3 w-3" /> },
+  in_progress: { label: "In Progress", variant: "default", icon: <PlayCircle className="h-3 w-3" /> },
+  completed: { label: "Completed", variant: "outline", icon: <Check className="h-3 w-3" /> },
+};
 
 interface UploadedFile {
   name: string;
@@ -63,6 +77,7 @@ const ClientIntakesPanel = () => {
   const [intakes, setIntakes] = useState<ClientIntake[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [viewingIntake, setViewingIntake] = useState<ClientIntake | null>(null);
   const { toast } = useToast();
 
@@ -116,6 +131,33 @@ const ClientIntakesPanel = () => {
       });
     }
     setDeletingId(null);
+  };
+
+  const handleStatusChange = async (id: string, newStatus: IntakeStatus) => {
+    setUpdatingStatusId(id);
+    const { error } = await supabase
+      .from("client_intakes")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update status.",
+        variant: "destructive",
+      });
+    } else {
+      setIntakes(intakes.map((i) => (i.id === id ? { ...i, status: newStatus } : i)));
+      // Update viewingIntake if it's the one being updated
+      if (viewingIntake?.id === id) {
+        setViewingIntake({ ...viewingIntake, status: newStatus });
+      }
+      toast({
+        title: "Status updated",
+        description: `Intake marked as ${STATUS_CONFIG[newStatus].label.toLowerCase()}.`,
+      });
+    }
+    setUpdatingStatusId(null);
   };
 
   if (isLoading) {
@@ -185,9 +227,34 @@ const ClientIntakesPanel = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={intake.status === "pending" ? "secondary" : "default"}>
-                    {intake.status}
-                  </Badge>
+                  <Select
+                    value={intake.status}
+                    onValueChange={(value) => handleStatusChange(intake.id, value as IntakeStatus)}
+                    disabled={updatingStatusId === intake.id}
+                  >
+                    <SelectTrigger className="w-[140px] h-8">
+                      {updatingStatusId === intake.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <SelectValue>
+                          <div className="flex items-center gap-2">
+                            {STATUS_CONFIG[intake.status as IntakeStatus]?.icon}
+                            <span>{STATUS_CONFIG[intake.status as IntakeStatus]?.label || intake.status}</span>
+                          </div>
+                        </SelectValue>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                        <SelectItem key={value} value={value}>
+                          <div className="flex items-center gap-2">
+                            {config.icon}
+                            <span>{config.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
@@ -245,10 +312,42 @@ const ClientIntakesPanel = () => {
           {viewingIntake && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl font-heading">{viewingIntake.business_name}</DialogTitle>
-                <DialogDescription>
-                  Submitted by {viewingIntake.contact_name} on {format(new Date(viewingIntake.created_at), "MMMM d, yyyy")}
-                </DialogDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <DialogTitle className="text-2xl font-heading">{viewingIntake.business_name}</DialogTitle>
+                    <DialogDescription>
+                      Submitted by {viewingIntake.contact_name} on {format(new Date(viewingIntake.created_at), "MMMM d, yyyy")}
+                    </DialogDescription>
+                  </div>
+                  <Select
+                    value={viewingIntake.status}
+                    onValueChange={(value) => handleStatusChange(viewingIntake.id, value as IntakeStatus)}
+                    disabled={updatingStatusId === viewingIntake.id}
+                  >
+                    <SelectTrigger className="w-[140px] h-9">
+                      {updatingStatusId === viewingIntake.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <SelectValue>
+                          <div className="flex items-center gap-2">
+                            {STATUS_CONFIG[viewingIntake.status as IntakeStatus]?.icon}
+                            <span>{STATUS_CONFIG[viewingIntake.status as IntakeStatus]?.label || viewingIntake.status}</span>
+                          </div>
+                        </SelectValue>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                        <SelectItem key={value} value={value}>
+                          <div className="flex items-center gap-2">
+                            {config.icon}
+                            <span>{config.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </DialogHeader>
 
               <div className="space-y-6 mt-4">
