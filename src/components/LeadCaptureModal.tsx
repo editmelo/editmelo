@@ -386,7 +386,7 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
 
               <Button variant="hero" size="xl" className="w-full" asChild>
                 <a
-                  href="https://calendar.app.google/ZPDRhjEVzosBdRQQ6"
+                  href="https://calendar.app.google/KzHTeKeMEKbbJ2i7A"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
