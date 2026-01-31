@@ -5,8 +5,12 @@ import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle, ArrowLeft, ArrowRight, Lock } from "lucide-react";
 import logo from "@/assets/logo.png";
+
+const INTAKE_PASSWORD = "thirteen";
 
 // Step components
 import IntakeWelcome from "@/components/intake/IntakeWelcome";
@@ -97,11 +101,24 @@ const STEPS = [
 ];
 
 const ClientIntake = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.toLowerCase().trim() === INTAKE_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError("");
+    } else {
+      setPasswordError("Incorrect password. Please try again.");
+    }
+  };
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
@@ -181,13 +198,59 @@ const ClientIntake = () => {
     }
   };
 
+  // Password gate
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4">
+              <img src={logo} alt="Edit Me Lo" className="h-12 mx-auto" />
+            </div>
+            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-heading">Client Intake Portal</CardTitle>
+            <CardDescription className="text-base">
+              Enter the password provided by Edit Me Lo to access your intake form.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError("");
+                  }}
+                  className={passwordError ? "border-destructive" : ""}
+                />
+                {passwordError && (
+                  <p className="text-sm text-destructive">{passwordError}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full">
+                Access Intake Form
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (isComplete) {
     return (
       <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
         <Card className="max-w-lg w-full text-center">
           <CardHeader>
             <div className="mx-auto mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+              <CheckCircle className="h-16 w-16 text-primary" />
             </div>
             <CardTitle className="text-2xl font-heading">You're All Set!</CardTitle>
             <CardDescription className="text-base">
