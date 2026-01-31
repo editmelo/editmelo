@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Calendar, Building2, User, Mail, Phone, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,16 +45,42 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const { error } = await supabase.from("leads").insert({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        company_name: formData.companyName,
+        company_description: formData.companyDescription,
+      });
 
-    setIsSubmitting(false);
-    setStep("schedule");
+      if (error) {
+        console.error("Error saving lead:", error);
+        toast({
+          title: "Something went wrong",
+          description: "Please try again or contact us directly.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-    toast({
-      title: "Information received!",
-      description: "Now let's schedule your free consultation.",
-    });
+      setIsSubmitting(false);
+      setStep("schedule");
+
+      toast({
+        title: "Information received!",
+        description: "Now let's schedule your free consultation.",
+      });
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
