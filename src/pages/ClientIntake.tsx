@@ -153,6 +153,17 @@ const ClientIntake = () => {
 
       if (error) throw error;
 
+      // Send notification email (non-blocking)
+      supabase.functions.invoke("notify-new-intake", {
+        body: formData,
+      }).then(({ error: emailError }) => {
+        if (emailError) {
+          console.error("Failed to send notification email:", emailError);
+        } else {
+          console.log("Intake notification email sent");
+        }
+      });
+
       setIsComplete(true);
       toast({
         title: "Intake submitted!",
