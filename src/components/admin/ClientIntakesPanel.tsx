@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -81,6 +82,9 @@ interface ClientIntake {
   status: string;
 }
 
+type SortField = "business_name" | "created_at" | "status";
+type SortDirection = "asc" | "desc";
+
 const ClientIntakesPanel = () => {
   const [intakes, setIntakes] = useState<ClientIntake[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +92,71 @@ const ClientIntakesPanel = () => {
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [viewingIntake, setViewingIntake] = useState<ClientIntake | null>(null);
   const { toast } = useToast();
+
+  // Filtering & Sorting state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<IntakeStatus | "all">("all");
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Filtered and sorted intakes
+  const filteredIntakes = useMemo(() => {
+    let result = [...intakes];
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (intake) =>
+          intake.business_name.toLowerCase().includes(query) ||
+          intake.contact_name.toLowerCase().includes(query) ||
+          intake.contact_email.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      result = result.filter((intake) => intake.status === statusFilter);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "business_name":
+          comparison = a.business_name.localeCompare(b.business_name);
+          break;
+        case "created_at":
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case "status":
+          const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2 };
+          comparison = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [intakes, searchQuery, statusFilter, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setSortField("created_at");
+    setSortDirection("desc");
+  };
+
+  const hasActiveFilters = searchQuery || statusFilter !== "all";
 
   useEffect(() => {
     fetchIntakes();
@@ -378,10 +447,60 @@ const ClientIntakesPanel = () => {
     );
   }
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1" />
+    );
+  };
+
   return (
     <>
-      {/* Export Actions */}
-      <div className="flex justify-end mb-4">
+      {/* Filters and Export */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by business or contact..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Status Filter */}
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as IntakeStatus | "all")}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+              <SelectItem key={value} value={value}>
+                <div className="flex items-center gap-2">
+                  {config.icon}
+                  <span>{config.label}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Clear Filters */}
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        )}
+
+        {/* Export Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -402,20 +521,56 @@ const ClientIntakesPanel = () => {
         </DropdownMenu>
       </div>
 
+      {/* Results count */}
+      <div className="text-sm text-muted-foreground mb-2">
+        Showing {filteredIntakes.length} of {intakes.length} intake{intakes.length !== 1 ? "s" : ""}
+      </div>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Contact</TableHead>
-              <TableHead>Business</TableHead>
+              <TableHead>
+                <button
+                  className="flex items-center hover:text-foreground transition-colors"
+                  onClick={() => handleSort("business_name")}
+                >
+                  Business
+                  <SortIcon field="business_name" />
+                </button>
+              </TableHead>
               <TableHead>Industry</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <button
+                  className="flex items-center hover:text-foreground transition-colors"
+                  onClick={() => handleSort("created_at")}
+                >
+                  Date
+                  <SortIcon field="created_at" />
+                </button>
+              </TableHead>
+              <TableHead>
+                <button
+                  className="flex items-center hover:text-foreground transition-colors"
+                  onClick={() => handleSort("status")}
+                >
+                  Status
+                  <SortIcon field="status" />
+                </button>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {intakes.map((intake) => (
+            {filteredIntakes.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No intakes match your filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredIntakes.map((intake) => (
               <TableRow key={intake.id}>
                 <TableCell>
                   <div className="space-y-1">
@@ -533,7 +688,8 @@ const ClientIntakesPanel = () => {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            )}
           </TableBody>
         </Table>
       </div>
