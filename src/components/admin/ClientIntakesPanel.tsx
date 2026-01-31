@@ -4,8 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown, X, CheckSquare } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -99,6 +100,10 @@ const ClientIntakesPanel = () => {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
   // Filtered and sorted intakes
   const filteredIntakes = useMemo(() => {
     let result = [...intakes];
@@ -157,6 +162,69 @@ const ClientIntakesPanel = () => {
   };
 
   const hasActiveFilters = searchQuery || statusFilter !== "all";
+
+  // Bulk selection helpers
+  const allFilteredSelected = filteredIntakes.length > 0 && filteredIntakes.every((i) => selectedIds.has(i.id));
+  const someFilteredSelected = filteredIntakes.some((i) => selectedIds.has(i.id));
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      // Deselect all filtered
+      const newSelected = new Set(selectedIds);
+      filteredIntakes.forEach((i) => newSelected.delete(i.id));
+      setSelectedIds(newSelected);
+    } else {
+      // Select all filtered
+      const newSelected = new Set(selectedIds);
+      filteredIntakes.forEach((i) => newSelected.add(i.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkStatusChange = async (newStatus: IntakeStatus) => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkUpdating(true);
+    const idsArray = Array.from(selectedIds);
+
+    const { error } = await supabase
+      .from("client_intakes")
+      .update({ status: newStatus })
+      .in("id", idsArray);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update statuses.",
+        variant: "destructive",
+      });
+    } else {
+      setIntakes((prev) =>
+        prev.map((i) => (selectedIds.has(i.id) ? { ...i, status: newStatus } : i))
+      );
+      toast({
+        title: "Statuses updated",
+        description: `${selectedIds.size} intake(s) marked as ${STATUS_CONFIG[newStatus].label.toLowerCase()}.`,
+      });
+      clearSelection();
+    }
+    setIsBulkUpdating(false);
+  };
+
 
   useEffect(() => {
     fetchIntakes();
@@ -526,10 +594,58 @@ const ClientIntakesPanel = () => {
         Showing {filteredIntakes.length} of {intakes.length} intake{intakes.length !== 1 ? "s" : ""}
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              {selectedIds.size} intake{selectedIds.size !== 1 ? "s" : ""} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-2">Change status to:</span>
+            {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+              <Button
+                key={value}
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkStatusChange(value as IntakeStatus)}
+                disabled={isBulkUpdating}
+                className="gap-1"
+              >
+                {isBulkUpdating ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  config.icon
+                )}
+                {config.label}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="ml-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={allFilteredSelected}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all"
+                  className={someFilteredSelected && !allFilteredSelected ? "data-[state=checked]:bg-primary/50" : ""}
+                />
+              </TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>
                 <button
@@ -565,13 +681,20 @@ const ClientIntakesPanel = () => {
           <TableBody>
             {filteredIntakes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No intakes match your filters.
                 </TableCell>
               </TableRow>
             ) : (
               filteredIntakes.map((intake) => (
-              <TableRow key={intake.id}>
+              <TableRow key={intake.id} className={selectedIds.has(intake.id) ? "bg-primary/5" : ""}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(intake.id)}
+                    onCheckedChange={() => toggleSelect(intake.id)}
+                    aria-label={`Select ${intake.business_name}`}
+                  />
+                </TableCell>
                 <TableCell>
                   <div className="space-y-1">
                     <p className="font-medium">{intake.contact_name}</p>
