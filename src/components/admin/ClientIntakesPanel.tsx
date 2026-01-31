@@ -4,8 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type IntakeStatus = "pending" | "in_progress" | "completed";
 
@@ -160,6 +168,199 @@ const ClientIntakesPanel = () => {
     setUpdatingStatusId(null);
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      "Business Name",
+      "Contact Name",
+      "Email",
+      "Phone",
+      "Industry",
+      "Location",
+      "Description",
+      "Website Goal",
+      "Desired Action",
+      "Pages",
+      "Services",
+      "Brand Colors",
+      "Brand Fonts",
+      "Brand Personality",
+      "Inspiration Websites",
+      "Success Definition",
+      "Current Challenges",
+      "Competitors",
+      "Avoid/Include",
+      "Status",
+      "Submitted Date",
+    ];
+
+    const rows = intakes.map((intake) => [
+      intake.business_name,
+      intake.contact_name,
+      intake.contact_email,
+      intake.contact_phone || "",
+      intake.industry,
+      intake.location,
+      intake.business_description,
+      intake.website_goal,
+      intake.desired_action,
+      intake.desired_pages.filter((p) => p.name).map((p) => p.name).join("; "),
+      intake.services.filter((s) => s.name).map((s) => s.name).join("; "),
+      intake.brand_colors || "",
+      intake.brand_fonts || "",
+      intake.brand_personality || "",
+      intake.inspiration_websites || "",
+      intake.success_definition || "",
+      intake.current_challenges || "",
+      intake.competitors || "",
+      intake.avoid_or_include || "",
+      STATUS_CONFIG[intake.status as IntakeStatus]?.label || intake.status,
+      format(new Date(intake.created_at), "yyyy-MM-dd"),
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `client-intakes-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+
+    toast({
+      title: "CSV exported",
+      description: `${intakes.length} intake(s) exported successfully.`,
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    
+    doc.setFontSize(18);
+    doc.text("Client Intakes Report", 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Generated on ${format(new Date(), "MMMM d, yyyy")}`, 14, 30);
+
+    const tableData = intakes.map((intake) => [
+      intake.business_name,
+      intake.contact_name,
+      intake.contact_email,
+      intake.industry,
+      intake.location,
+      STATUS_CONFIG[intake.status as IntakeStatus]?.label || intake.status,
+      format(new Date(intake.created_at), "MMM d, yyyy"),
+    ]);
+
+    autoTable(doc, {
+      startY: 36,
+      head: [["Business", "Contact", "Email", "Industry", "Location", "Status", "Date"]],
+      body: tableData,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
+    doc.save(`client-intakes-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+
+    toast({
+      title: "PDF exported",
+      description: `${intakes.length} intake(s) exported successfully.`,
+    });
+  };
+
+  const exportSingleIntakeToPDF = (intake: ClientIntake) => {
+    const doc = new jsPDF();
+    let yPos = 20;
+    const leftMargin = 14;
+    const lineHeight = 7;
+
+    // Title
+    doc.setFontSize(20);
+    doc.text(intake.business_name, leftMargin, yPos);
+    yPos += 10;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Submitted by ${intake.contact_name} on ${format(new Date(intake.created_at), "MMMM d, yyyy")}`, leftMargin, yPos);
+    yPos += 15;
+
+    const addSection = (title: string, fields: { label: string; value: string | null | undefined }[]) => {
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text(title, leftMargin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(10);
+      fields.forEach(({ label, value }) => {
+        if (value) {
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+          doc.setTextColor(100);
+          doc.text(`${label}:`, leftMargin, yPos);
+          doc.setTextColor(0);
+          const lines = doc.splitTextToSize(value, 170);
+          doc.text(lines, leftMargin + 35, yPos);
+          yPos += lineHeight * Math.max(1, lines.length);
+        }
+      });
+      yPos += 5;
+    };
+
+    addSection("Contact Information", [
+      { label: "Name", value: intake.contact_name },
+      { label: "Email", value: intake.contact_email },
+      { label: "Phone", value: intake.contact_phone },
+    ]);
+
+    addSection("Business Information", [
+      { label: "Business", value: intake.business_name },
+      { label: "Industry", value: intake.industry },
+      { label: "Location", value: intake.location },
+      { label: "Description", value: intake.business_description },
+      { label: "Website Goal", value: intake.website_goal },
+      { label: "Desired Action", value: intake.desired_action },
+    ]);
+
+    addSection("Brand Identity", [
+      { label: "Colors", value: intake.brand_colors },
+      { label: "Fonts", value: intake.brand_fonts },
+      { label: "Personality", value: intake.brand_personality },
+      { label: "Inspiration", value: intake.inspiration_websites },
+    ]);
+
+    const pages = intake.desired_pages.filter((p) => p.name).map((p) => p.name).join(", ");
+    if (pages) {
+      addSection("Website Pages", [{ label: "Pages", value: pages }]);
+    }
+
+    const services = intake.services.filter((s) => s.name).map((s) => `${s.name}${s.price ? ` (${s.price})` : ""}`).join(", ");
+    if (services) {
+      addSection("Services", [{ label: "Services", value: services }]);
+    }
+
+    addSection("Goals & Expectations", [
+      { label: "Success", value: intake.success_definition },
+      { label: "Challenges", value: intake.current_challenges },
+      { label: "Competitors", value: intake.competitors },
+      { label: "Avoid/Include", value: intake.avoid_or_include },
+    ]);
+
+    doc.save(`intake-${intake.business_name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+
+    toast({
+      title: "PDF exported",
+      description: `Intake for ${intake.business_name} exported.`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -179,6 +380,28 @@ const ClientIntakesPanel = () => {
 
   return (
     <>
+      {/* Export Actions */}
+      <div className="flex justify-end mb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export All
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportToCSV}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -262,8 +485,17 @@ const ClientIntakesPanel = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => setViewingIntake(intake)}
+                      title="View details"
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => exportSingleIntakeToPDF(intake)}
+                      title="Export to PDF"
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
