@@ -34,8 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending notification email for new lead:", { name, companyName });
 
-    // TODO: Replace with your actual email address
-    const notificationEmail = "your-email@example.com";
+    const notificationEmail = "info@editmelo.com";
 
     const emailResponse = await resend.emails.send({
       from: "Lead Notifications <onboarding@resend.dev>",
