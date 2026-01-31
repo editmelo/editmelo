@@ -2,3 +2,9 @@ project_id = "bcjuejipotipblxsfrfr"
 
 [functions.notify-new-lead]
 verify_jwt = false
+
+[functions.submit-lead]
+verify_jwt = false
+
+[functions.get-recaptcha-config]
+verify_jwt = false
