@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const INTAKE_PASSWORD = "thirteen";
@@ -104,6 +104,7 @@ const ClientIntake = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,17 +220,31 @@ const ClientIntake = () => {
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setPasswordError("");
-                  }}
-                  className={passwordError ? "border-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError("");
+                    }}
+                    className={`pr-10 ${passwordError ? "border-destructive" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 {passwordError && (
                   <p className="text-sm text-destructive">{passwordError}</p>
                 )}
