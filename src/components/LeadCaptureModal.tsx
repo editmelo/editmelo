@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
+const CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ0mBphYB-r6A5K_S3Byh9nLwf8HbYtNdEn8w8CY7BuvVLCSocln83uhulfmLSnVExjhQeeaT9bA?gv=true";
+
 interface LeadCaptureModalProps {
   children: React.ReactNode;
   buttonVariant?: "hero" | "heroOutline" | "default" | "outline";
@@ -384,15 +386,15 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
                 <p className="font-semibold">{formData.companyName}</p>
               </div>
 
-              <Button 
-                variant="hero" 
-                size="xl" 
-                className="w-full"
-                onClick={() => window.open("https://calendar.app.google/KzHTeKeMEKbbJ2i7A", "_blank", "noopener,noreferrer")}
-              >
-                <Calendar className="mr-2 w-5 h-5" />
-                Pick a Time
-              </Button>
+              <div className="w-full h-[400px] bg-background rounded-xl overflow-hidden border">
+                <iframe
+                  src={CALENDAR_URL}
+                  style={{ border: 0 }}
+                  width="100%"
+                  height="100%"
+                  title="Schedule a consultation"
+                />
+              </div>
 
               <p className="text-center text-sm text-muted-foreground">
                 Free 15-minute consultation • No obligation
