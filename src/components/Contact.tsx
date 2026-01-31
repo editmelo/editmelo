@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Send, Calendar, Mail, Phone } from "lucide-react";
+import { Send, Calendar, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import CalendarModal from "@/components/CalendarModal";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -62,21 +63,22 @@ const Contact = () => {
 
             {/* Quick actions */}
             <div className="space-y-4 mb-8">
-              <button
-                type="button"
-                onClick={() => window.open("https://calendar.app.google/KzHTeKeMEKbbJ2i7A", "_blank", "noopener,noreferrer")}
-                className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group w-full text-left cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Calendar className="w-6 h-6 text-accent-foreground" />
-                </div>
-                <div>
-                  <p className="font-semibold">Schedule a Free Consultation</p>
-                  <p className="text-sm text-primary-foreground/70">
-                    Book a time that works for you
-                  </p>
-                </div>
-              </button>
+              <CalendarModal>
+                <button
+                  type="button"
+                  className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group w-full text-left cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Calendar className="w-6 h-6 text-accent-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Schedule a Free Consultation</p>
+                    <p className="text-sm text-primary-foreground/70">
+                      Book a time that works for you
+                    </p>
+                  </div>
+                </button>
+              </CalendarModal>
 
               <a
                 href="mailto:info@editmelo.com"
