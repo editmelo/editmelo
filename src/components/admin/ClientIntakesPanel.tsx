@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -26,6 +26,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+}
+
 interface ClientIntake {
   id: string;
   created_at: string;
@@ -41,6 +47,8 @@ interface ClientIntake {
   inspiration_websites: string | null;
   desired_pages: { name: string; purpose: string; notes: string }[];
   services: { name: string; description: string; target_audience: string; outcome: string; price: string }[];
+  logo_files: UploadedFile[];
+  brand_assets: UploadedFile[];
   success_definition: string | null;
   current_challenges: string | null;
   competitors: string | null;
@@ -82,6 +90,8 @@ const ClientIntakesPanel = () => {
         ...intake,
         desired_pages: intake.desired_pages as ClientIntake["desired_pages"],
         services: intake.services as ClientIntake["services"],
+        logo_files: (intake.logo_files || []) as unknown as UploadedFile[],
+        brand_assets: (intake.brand_assets || []) as unknown as UploadedFile[],
       }));
       setIntakes(typedData);
     }
@@ -260,8 +270,11 @@ const ClientIntakesPanel = () => {
                 </Section>
 
                 {/* Brand Identity */}
-                {(viewingIntake.brand_colors || viewingIntake.brand_fonts || viewingIntake.brand_personality || viewingIntake.inspiration_websites) && (
+                {(viewingIntake.brand_colors || viewingIntake.brand_fonts || viewingIntake.brand_personality || viewingIntake.inspiration_websites || viewingIntake.logo_files.length > 0) && (
                   <Section title="Brand Identity">
+                    {viewingIntake.logo_files.length > 0 && (
+                      <FileListDisplay files={viewingIntake.logo_files} label="Logo Files" />
+                    )}
                     <Field label="Colors" value={viewingIntake.brand_colors} />
                     <Field label="Fonts" value={viewingIntake.brand_fonts} />
                     <Field label="Personality" value={viewingIntake.brand_personality} />
@@ -300,6 +313,13 @@ const ClientIntakesPanel = () => {
                   </Section>
                 )}
 
+                {/* Visual Assets */}
+                {viewingIntake.brand_assets.length > 0 && (
+                  <Section title="Visual Assets">
+                    <FileListDisplay files={viewingIntake.brand_assets} label="Uploaded Files" />
+                  </Section>
+                )}
+
                 {/* Goals */}
                 {(viewingIntake.success_definition || viewingIntake.current_challenges || viewingIntake.competitors || viewingIntake.avoid_or_include) && (
                   <Section title="Goals & Expectations">
@@ -331,6 +351,39 @@ const Field = ({ label, value }: { label: string; value: string | null | undefin
     <div>
       <span className="font-medium text-muted-foreground">{label}:</span>{" "}
       <span className="text-foreground">{value}</span>
+    </div>
+  );
+};
+
+const FileListDisplay = ({ files, label }: { files: UploadedFile[]; label: string }) => {
+  if (!files || files.length === 0) return null;
+  
+  const isImage = (type: string) => type.startsWith("image/");
+  
+  return (
+    <div className="space-y-2">
+      <span className="font-medium text-muted-foreground">{label}:</span>
+      <div className="flex flex-wrap gap-2">
+        {files.map((file, i) => (
+          <a
+            key={i}
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 border border-border hover:border-primary transition-colors"
+          >
+            {isImage(file.type) ? (
+              <img src={file.url} alt={file.name} className="h-8 w-8 rounded object-cover" />
+            ) : file.type.includes("pdf") ? (
+              <File className="h-4 w-4 text-destructive" />
+            ) : (
+              <FileImage className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-xs truncate max-w-[100px]">{file.name}</span>
+            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+          </a>
+        ))}
+      </div>
     </div>
   );
 };
