@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown, X, CheckSquare } from "lucide-react";
+import { Loader2, Building2, Calendar, Eye, Trash2, Mail, Phone, FileImage, File, ExternalLink, Check, Clock, PlayCircle, Download, FileText, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown, X, CheckSquare, MessageSquare, Save } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -81,6 +82,7 @@ interface ClientIntake {
   contact_email: string;
   contact_phone: string | null;
   status: string;
+  admin_notes: string | null;
 }
 
 type SortField = "business_name" | "created_at" | "status";
@@ -103,6 +105,11 @@ const ClientIntakesPanel = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+  // Admin notes state
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [notesValue, setNotesValue] = useState("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   // Filtered and sorted intakes
   const filteredIntakes = useMemo(() => {
@@ -223,6 +230,47 @@ const ClientIntakesPanel = () => {
       clearSelection();
     }
     setIsBulkUpdating(false);
+  };
+
+  const startEditingNotes = (intake: ClientIntake) => {
+    setEditingNotesId(intake.id);
+    setNotesValue(intake.admin_notes || "");
+  };
+
+  const cancelEditingNotes = () => {
+    setEditingNotesId(null);
+    setNotesValue("");
+  };
+
+  const saveNotes = async (intakeId: string) => {
+    setIsSavingNotes(true);
+    const { error } = await supabase
+      .from("client_intakes")
+      .update({ admin_notes: notesValue || null })
+      .eq("id", intakeId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save notes.",
+        variant: "destructive",
+      });
+    } else {
+      setIntakes((prev) =>
+        prev.map((i) => (i.id === intakeId ? { ...i, admin_notes: notesValue || null } : i))
+      );
+      // Update viewingIntake if it's the one being edited
+      if (viewingIntake?.id === intakeId) {
+        setViewingIntake({ ...viewingIntake, admin_notes: notesValue || null });
+      }
+      toast({
+        title: "Notes saved",
+        description: "Admin notes have been updated.",
+      });
+      setEditingNotesId(null);
+      setNotesValue("");
+    }
+    setIsSavingNotes(false);
   };
 
 
@@ -718,6 +766,11 @@ const ClientIntakesPanel = () => {
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{intake.business_name}</span>
+                    {intake.admin_notes && (
+                      <span title="Has admin notes">
+                        <MessageSquare className="h-3 w-3 text-primary" />
+                      </span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>{intake.industry}</TableCell>
@@ -939,6 +992,71 @@ const ClientIntakesPanel = () => {
                     <Field label="Avoid/Include" value={viewingIntake.avoid_or_include} />
                   </Section>
                 )}
+
+                {/* Admin Notes */}
+                <div className="bg-muted/50 rounded-lg p-4 border border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <h3 className="font-heading text-lg">Admin Notes</h3>
+                    <span className="text-xs text-muted-foreground">(Internal only)</span>
+                  </div>
+                  {editingNotesId === viewingIntake.id ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={notesValue}
+                        onChange={(e) => setNotesValue(e.target.value)}
+                        placeholder="Add internal notes about this client..."
+                        className="min-h-[100px] bg-background"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelEditingNotes}
+                          disabled={isSavingNotes}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => saveNotes(viewingIntake.id)}
+                          disabled={isSavingNotes}
+                        >
+                          {isSavingNotes ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Save className="h-4 w-4 mr-2" />
+                          )}
+                          Save Notes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {viewingIntake.admin_notes ? (
+                        <div className="space-y-2">
+                          <p className="text-sm whitespace-pre-wrap">{viewingIntake.admin_notes}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditingNotes(viewingIntake)}
+                          >
+                            Edit Notes
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditingNotes(viewingIntake)}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Add Notes
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
