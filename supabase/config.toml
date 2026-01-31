@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.get-recaptcha-config]
 verify_jwt = false
+
+[functions.scrape-company]
+verify_jwt = false
+
+[functions.research-lead]
+verify_jwt = false

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut, Trash2, Mail, Phone, Building2, Calendar, ArrowLeft } from "lucide-react";
+import { Loader2, LogOut, Trash2, Mail, Phone, Building2, Calendar, ArrowLeft, Search } from "lucide-react";
 import { format } from "date-fns";
 import logo from "@/assets/logo.png";
 import {
@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { LeadResearchPanel } from "@/components/admin/LeadResearchPanel";
 
 interface Lead {
   id: string;
@@ -39,6 +40,7 @@ const Admin = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [researchingLead, setResearchingLead] = useState<Lead | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -246,39 +248,49 @@ const Admin = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                disabled={deletingId === lead.id}
-                              >
-                                {deletingId === lead.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete the lead from {lead.company_name}. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(lead.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-primary hover:text-primary hover:bg-primary/10"
+                              onClick={() => setResearchingLead(lead)}
+                            >
+                              <Search className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingId === lead.id}
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  {deletingId === lead.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the lead from {lead.company_name}. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(lead.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -288,6 +300,16 @@ const Admin = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Research Panel */}
+        {researchingLead && (
+          <div className="mt-6">
+            <LeadResearchPanel
+              lead={researchingLead}
+              onClose={() => setResearchingLead(null)}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
