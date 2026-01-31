@@ -17,6 +17,7 @@ const Footer = () => {
     { href: "#process", label: "How It Works" },
     { href: "#testimonials", label: "Reviews" },
     { href: "#contact", label: "Contact" },
+    { href: "/client-intake", label: "Client Intake Portal" },
   ];
 
   return (
