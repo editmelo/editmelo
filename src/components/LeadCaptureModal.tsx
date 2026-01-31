@@ -65,6 +65,23 @@ const LeadCaptureModal = ({ children, buttonVariant = "hero" }: LeadCaptureModal
         return;
       }
 
+      // Send email notification (non-blocking)
+      supabase.functions.invoke("notify-new-lead", {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          companyName: formData.companyName,
+          companyDescription: formData.companyDescription,
+        },
+      }).then((result) => {
+        if (result.error) {
+          console.error("Email notification failed:", result.error);
+        } else {
+          console.log("Email notification sent successfully");
+        }
+      });
+
       setIsSubmitting(false);
       setStep("schedule");
 
