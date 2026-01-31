@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       client_intakes: {
         Row: {
+          admin_notes: string | null
           avoid_or_include: string | null
           brand_assets: Json | null
           brand_colors: string | null
@@ -43,6 +44,7 @@ export type Database = {
           website_goal: string
         }
         Insert: {
+          admin_notes?: string | null
           avoid_or_include?: string | null
           brand_assets?: Json | null
           brand_colors?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           website_goal: string
         }
         Update: {
+          admin_notes?: string | null
           avoid_or_include?: string | null
           brand_assets?: Json | null
           brand_colors?: string | null
