@@ -17,6 +17,7 @@ export type Database = {
       client_intakes: {
         Row: {
           avoid_or_include: string | null
+          brand_assets: Json | null
           brand_colors: string | null
           brand_fonts: string | null
           brand_personality: string | null
@@ -34,6 +35,7 @@ export type Database = {
           industry: string
           inspiration_websites: string | null
           location: string
+          logo_files: Json | null
           services: Json | null
           status: string
           success_definition: string | null
@@ -42,6 +44,7 @@ export type Database = {
         }
         Insert: {
           avoid_or_include?: string | null
+          brand_assets?: Json | null
           brand_colors?: string | null
           brand_fonts?: string | null
           brand_personality?: string | null
@@ -59,6 +62,7 @@ export type Database = {
           industry: string
           inspiration_websites?: string | null
           location: string
+          logo_files?: Json | null
           services?: Json | null
           status?: string
           success_definition?: string | null
@@ -67,6 +71,7 @@ export type Database = {
         }
         Update: {
           avoid_or_include?: string | null
+          brand_assets?: Json | null
           brand_colors?: string | null
           brand_fonts?: string | null
           brand_personality?: string | null
@@ -84,6 +89,7 @@ export type Database = {
           industry?: string
           inspiration_websites?: string | null
           location?: string
+          logo_files?: Json | null
           services?: Json | null
           status?: string
           success_definition?: string | null

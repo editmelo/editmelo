@@ -1,7 +1,7 @@
 import { IntakeFormData } from "@/pages/ClientIntake";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Building2, Palette, Layout, Briefcase, Target } from "lucide-react";
+import { User, Building2, Palette, Layout, Briefcase, Target, ImageIcon, FileImage, File } from "lucide-react";
 
 interface Props {
   formData: IntakeFormData;
@@ -25,6 +25,38 @@ const Field = ({ label, value }: { label: string; value: string | undefined }) =
     <div>
       <span className="font-medium text-muted-foreground">{label}:</span>{" "}
       <span className="text-foreground">{value}</span>
+    </div>
+  );
+};
+
+const FileList = ({ files, label }: { files: { name: string; url: string; type: string }[]; label: string }) => {
+  if (!files || files.length === 0) return null;
+  
+  const isImage = (type: string) => type.startsWith("image/");
+  
+  return (
+    <div className="space-y-2">
+      <span className="font-medium text-muted-foreground">{label}:</span>
+      <div className="flex flex-wrap gap-2">
+        {files.map((file, i) => (
+          <a
+            key={i}
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 border border-border hover:border-primary transition-colors"
+          >
+            {isImage(file.type) ? (
+              <img src={file.url} alt={file.name} className="h-6 w-6 rounded object-cover" />
+            ) : file.type.includes("pdf") ? (
+              <File className="h-4 w-4 text-destructive" />
+            ) : (
+              <FileImage className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-xs truncate max-w-[120px]">{file.name}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 };
@@ -58,8 +90,9 @@ const IntakeReview = ({ formData }: Props) => {
         </Section>
 
         {/* Brand Identity */}
-        {(formData.brand_colors || formData.brand_fonts || formData.brand_personality || formData.inspiration_websites) && (
+        {(formData.brand_colors || formData.brand_fonts || formData.brand_personality || formData.inspiration_websites || formData.logo_files.length > 0) && (
           <Section icon={Palette} title="Brand Identity">
+            <FileList files={formData.logo_files} label="Logo Files" />
             <Field label="Colors" value={formData.brand_colors} />
             <Field label="Fonts" value={formData.brand_fonts} />
             <Field label="Personality" value={formData.brand_personality} />
@@ -99,6 +132,13 @@ const IntakeReview = ({ formData }: Props) => {
                 {service.price && <p className="text-muted-foreground text-xs">Price: {service.price}</p>}
               </div>
             ))}
+          </Section>
+        )}
+
+        {/* Visual Assets */}
+        {formData.brand_assets.length > 0 && (
+          <Section icon={ImageIcon} title="Visual Assets">
+            <FileList files={formData.brand_assets} label="Uploaded Files" />
           </Section>
         )}
 

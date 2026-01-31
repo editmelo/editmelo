@@ -2,6 +2,7 @@ import { IntakeFormData } from "@/pages/ClientIntake";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import FileUpload from "@/components/intake/FileUpload";
 
 interface Props {
   formData: IntakeFormData;
@@ -27,7 +28,18 @@ const IntakeBrandIdentity = ({ formData, updateFormData }: Props) => {
         <p className="text-muted-foreground">Share your existing brand assets and style preferences. All fields are optional if you don't have these yet.</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Logo Upload */}
+        <FileUpload
+          label="Logo Files"
+          description="Upload your logo files (PNG, SVG, AI, EPS, or PDF). Multiple versions are welcome."
+          files={formData.logo_files}
+          onFilesChange={(files) => updateFormData({ logo_files: files })}
+          accept="image/*,.pdf,.ai,.eps,.svg"
+          folder="logos"
+          maxFiles={5}
+        />
+
         <div className="space-y-2">
           <Label htmlFor="brand_colors">Brand Colors</Label>
           <Input

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +14,15 @@ import IntakeBusinessInfo from "@/components/intake/IntakeBusinessInfo";
 import IntakeBrandIdentity from "@/components/intake/IntakeBrandIdentity";
 import IntakeWebsiteStructure from "@/components/intake/IntakeWebsiteStructure";
 import IntakeServices from "@/components/intake/IntakeServices";
+import IntakeVisualAssets from "@/components/intake/IntakeVisualAssets";
 import IntakeGoals from "@/components/intake/IntakeGoals";
 import IntakeReview from "@/components/intake/IntakeReview";
+
+export interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+}
 
 export interface IntakeFormData {
   // Contact info
@@ -35,12 +43,16 @@ export interface IntakeFormData {
   brand_fonts: string;
   brand_personality: string;
   inspiration_websites: string;
+  logo_files: UploadedFile[];
   
   // Website Structure
   desired_pages: { name: string; purpose: string; notes: string }[];
   
   // Services
   services: { name: string; description: string; target_audience: string; outcome: string; price: string }[];
+  
+  // Visual Assets
+  brand_assets: UploadedFile[];
   
   // Goals & Expectations
   success_definition: string;
@@ -63,8 +75,10 @@ const INITIAL_FORM_DATA: IntakeFormData = {
   brand_fonts: "",
   brand_personality: "",
   inspiration_websites: "",
+  logo_files: [],
   desired_pages: [{ name: "Home", purpose: "", notes: "" }],
   services: [{ name: "", description: "", target_audience: "", outcome: "", price: "" }],
+  brand_assets: [],
   success_definition: "",
   current_challenges: "",
   competitors: "",
@@ -77,6 +91,7 @@ const STEPS = [
   { id: "brand", label: "Brand Identity" },
   { id: "structure", label: "Website Pages" },
   { id: "services", label: "Services" },
+  { id: "assets", label: "Visual Assets" },
   { id: "goals", label: "Goals" },
   { id: "review", label: "Review" },
 ];
@@ -126,8 +141,10 @@ const ClientIntake = () => {
         brand_fonts: formData.brand_fonts || null,
         brand_personality: formData.brand_personality || null,
         inspiration_websites: formData.inspiration_websites || null,
-        desired_pages: formData.desired_pages,
-        services: formData.services,
+        desired_pages: formData.desired_pages as unknown as Json,
+        services: formData.services as unknown as Json,
+        logo_files: formData.logo_files as unknown as Json,
+        brand_assets: formData.brand_assets as unknown as Json,
         success_definition: formData.success_definition || null,
         current_challenges: formData.current_challenges || null,
         competitors: formData.competitors || null,
@@ -191,6 +208,8 @@ const ClientIntake = () => {
         return <IntakeWebsiteStructure formData={formData} updateFormData={updateFormData} />;
       case "services":
         return <IntakeServices formData={formData} updateFormData={updateFormData} />;
+      case "assets":
+        return <IntakeVisualAssets formData={formData} updateFormData={updateFormData} />;
       case "goals":
         return <IntakeGoals formData={formData} updateFormData={updateFormData} />;
       case "review":
@@ -211,6 +230,8 @@ const ClientIntake = () => {
       case "structure":
         return formData.desired_pages.length > 0 && formData.desired_pages[0].name;
       case "services":
+        return true; // Optional section
+      case "assets":
         return true; // Optional section
       case "goals":
         return true; // Optional section
