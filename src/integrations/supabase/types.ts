@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_intakes: {
+        Row: {
+          avoid_or_include: string | null
+          brand_colors: string | null
+          brand_fonts: string | null
+          brand_personality: string | null
+          business_description: string
+          business_name: string
+          competitors: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          current_challenges: string | null
+          desired_action: string
+          desired_pages: Json | null
+          id: string
+          industry: string
+          inspiration_websites: string | null
+          location: string
+          services: Json | null
+          status: string
+          success_definition: string | null
+          updated_at: string
+          website_goal: string
+        }
+        Insert: {
+          avoid_or_include?: string | null
+          brand_colors?: string | null
+          brand_fonts?: string | null
+          brand_personality?: string | null
+          business_description: string
+          business_name: string
+          competitors?: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          current_challenges?: string | null
+          desired_action: string
+          desired_pages?: Json | null
+          id?: string
+          industry: string
+          inspiration_websites?: string | null
+          location: string
+          services?: Json | null
+          status?: string
+          success_definition?: string | null
+          updated_at?: string
+          website_goal: string
+        }
+        Update: {
+          avoid_or_include?: string | null
+          brand_colors?: string | null
+          brand_fonts?: string | null
+          brand_personality?: string | null
+          business_description?: string
+          business_name?: string
+          competitors?: string | null
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          current_challenges?: string | null
+          desired_action?: string
+          desired_pages?: Json | null
+          id?: string
+          industry?: string
+          inspiration_websites?: string | null
+          location?: string
+          services?: Json | null
+          status?: string
+          success_definition?: string | null
+          updated_at?: string
+          website_goal?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company_description: string
