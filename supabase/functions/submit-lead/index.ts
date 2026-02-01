@@ -99,9 +99,50 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validate required fields
     if (!name || !email || !companyName || !companyDescription) {
-      console.error("Missing required fields:", { name, email, companyName, companyDescription });
+      console.error("Missing required fields");
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Server-side length validation (matches client-side maxLength constraints)
+    if (name.trim().length > 100) {
+      console.warn("Name exceeds max length:", { length: name.length, ip: clientIP });
+      return new Response(
+        JSON.stringify({ error: "Name is too long (max 100 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (email.trim().length > 255) {
+      console.warn("Email exceeds max length:", { length: email.length, ip: clientIP });
+      return new Response(
+        JSON.stringify({ error: "Email is too long (max 255 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (companyName.trim().length > 200) {
+      console.warn("Company name exceeds max length:", { length: companyName.length, ip: clientIP });
+      return new Response(
+        JSON.stringify({ error: "Company name is too long (max 200 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (companyDescription.trim().length > 2000) {
+      console.warn("Description exceeds max length:", { length: companyDescription.length, ip: clientIP });
+      return new Response(
+        JSON.stringify({ error: "Description is too long (max 2000 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (phone && phone.trim().length > 20) {
+      console.warn("Phone exceeds max length:", { length: phone.length, ip: clientIP });
+      return new Response(
+        JSON.stringify({ error: "Phone number is too long (max 20 characters)" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -109,7 +150,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.error("Invalid email format:", email);
+      console.warn("Invalid email format for IP:", clientIP);
       return new Response(
         JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
