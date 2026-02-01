@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-const CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ0mBphYB-r6A5K_S3Byh9nLwf8HbYtNdEn8w8CY7BuvVLCSocln83uhulfmLSnVExjhQeeaT9bA?gv=true";
+const CALENDAR_URL = "https://calendar.app.google/89RtcmHtGyVYv4H27";
 
 interface LeadCaptureModalProps {
   children: React.ReactNode;
