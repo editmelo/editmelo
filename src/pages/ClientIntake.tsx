@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +27,16 @@ export interface UploadedFile {
   type: string;
 }
 
+export interface ColorEntry {
+  label: string;
+  value: string;
+}
+
+export interface FontEntry {
+  purpose: string;
+  name: string;
+}
+
 export interface IntakeFormData {
   // Contact info
   contact_name: string;
@@ -43,8 +52,8 @@ export interface IntakeFormData {
   desired_action: string;
   
   // Brand Identity
-  brand_colors: string;
-  brand_fonts: string;
+  brand_colors: ColorEntry[];
+  brand_fonts: FontEntry[];
   brand_personality: string;
   inspiration_websites: string;
   logo_files: UploadedFile[];
@@ -75,8 +84,8 @@ const INITIAL_FORM_DATA: IntakeFormData = {
   business_description: "",
   website_goal: "",
   desired_action: "",
-  brand_colors: "",
-  brand_fonts: "",
+  brand_colors: [],
+  brand_fonts: [],
   brand_personality: "",
   inspiration_websites: "",
   logo_files: [],
@@ -145,35 +154,49 @@ const ClientIntake = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("client_intakes").insert({
-        contact_name: formData.contact_name,
-        contact_email: formData.contact_email,
-        contact_phone: formData.contact_phone || null,
-        business_name: formData.business_name,
-        industry: formData.industry,
-        location: formData.location,
-        business_description: formData.business_description,
-        website_goal: formData.website_goal,
-        desired_action: formData.desired_action,
-        brand_colors: formData.brand_colors || null,
-        brand_fonts: formData.brand_fonts || null,
-        brand_personality: formData.brand_personality || null,
-        inspiration_websites: formData.inspiration_websites || null,
-        desired_pages: formData.desired_pages as unknown as Json,
-        services: formData.services as unknown as Json,
-        logo_files: formData.logo_files as unknown as Json,
-        brand_assets: formData.brand_assets as unknown as Json,
-        success_definition: formData.success_definition || null,
-        current_challenges: formData.current_challenges || null,
-        competitors: formData.competitors || null,
-        avoid_or_include: formData.avoid_or_include || null,
+      // Submit via edge function (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke("submit-intake", {
+        body: {
+          contact_name: formData.contact_name,
+          contact_email: formData.contact_email,
+          contact_phone: formData.contact_phone || null,
+          business_name: formData.business_name,
+          industry: formData.industry,
+          location: formData.location,
+          business_description: formData.business_description,
+          website_goal: formData.website_goal,
+          desired_action: formData.desired_action,
+          brand_colors: formData.brand_colors,
+          brand_fonts: formData.brand_fonts,
+          brand_personality: formData.brand_personality || null,
+          inspiration_websites: formData.inspiration_websites || null,
+          desired_pages: formData.desired_pages,
+          services: formData.services,
+          logo_files: formData.logo_files,
+          brand_assets: formData.brand_assets,
+          success_definition: formData.success_definition || null,
+          current_challenges: formData.current_challenges || null,
+          competitors: formData.competitors || null,
+          avoid_or_include: formData.avoid_or_include || null,
+        },
       });
 
       if (error) throw error;
 
       // Send notification email (non-blocking)
       supabase.functions.invoke("notify-new-intake", {
-        body: formData,
+        body: {
+          ...formData,
+          // Convert arrays to strings for email
+          brand_colors: formData.brand_colors
+            .filter((c) => c.value)
+            .map((c) => `${c.label}: ${c.value}`)
+            .join("; "),
+          brand_fonts: formData.brand_fonts
+            .filter((f) => f.name)
+            .map((f) => `${f.purpose}: ${f.name}`)
+            .join("; "),
+        },
       }).then(({ error: emailError }) => {
         if (emailError) {
           console.error("Failed to send notification email:", emailError);

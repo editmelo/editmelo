@@ -2,6 +2,8 @@ import { IntakeFormData } from "@/pages/ClientIntake";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Plus, X } from "lucide-react";
 import FileUpload from "@/components/intake/FileUpload";
 
 interface Props {
@@ -20,7 +22,66 @@ const PERSONALITY_EXAMPLES = [
   "Warm & Inviting",
 ];
 
+const COLOR_LABELS = [
+  "Primary",
+  "Secondary",
+  "Accent 1",
+  "Accent 2",
+  "Accent 3",
+  "Accent 4",
+];
+
+const FONT_PURPOSES = [
+  "Headings",
+  "Body Text",
+  "Accent/Display",
+];
+
 const IntakeBrandIdentity = ({ formData, updateFormData }: Props) => {
+  // Handle colors array
+  const handleColorChange = (index: number, field: "label" | "value", newValue: string) => {
+    const newColors = [...formData.brand_colors];
+    newColors[index] = { ...newColors[index], [field]: newValue };
+    updateFormData({ brand_colors: newColors });
+  };
+
+  const addColor = () => {
+    if (formData.brand_colors.length < 6) {
+      const usedLabels = formData.brand_colors.map(c => c.label);
+      const nextLabel = COLOR_LABELS.find(l => !usedLabels.includes(l)) || `Color ${formData.brand_colors.length + 1}`;
+      updateFormData({ 
+        brand_colors: [...formData.brand_colors, { label: nextLabel, value: "" }] 
+      });
+    }
+  };
+
+  const removeColor = (index: number) => {
+    const newColors = formData.brand_colors.filter((_, i) => i !== index);
+    updateFormData({ brand_colors: newColors });
+  };
+
+  // Handle fonts array
+  const handleFontChange = (index: number, field: "purpose" | "name", newValue: string) => {
+    const newFonts = [...formData.brand_fonts];
+    newFonts[index] = { ...newFonts[index], [field]: newValue };
+    updateFormData({ brand_fonts: newFonts });
+  };
+
+  const addFont = () => {
+    if (formData.brand_fonts.length < 3) {
+      const usedPurposes = formData.brand_fonts.map(f => f.purpose);
+      const nextPurpose = FONT_PURPOSES.find(p => !usedPurposes.includes(p)) || `Font ${formData.brand_fonts.length + 1}`;
+      updateFormData({ 
+        brand_fonts: [...formData.brand_fonts, { purpose: nextPurpose, name: "" }] 
+      });
+    }
+  };
+
+  const removeFont = (index: number) => {
+    const newFonts = formData.brand_fonts.filter((_, i) => i !== index);
+    updateFormData({ brand_fonts: newFonts });
+  };
+
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-4">
@@ -40,30 +101,126 @@ const IntakeBrandIdentity = ({ formData, updateFormData }: Props) => {
           maxFiles={5}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="brand_colors">Brand Colors</Label>
-          <Input
-            id="brand_colors"
-            value={formData.brand_colors}
-            onChange={(e) => updateFormData({ brand_colors: e.target.value })}
-            placeholder="e.g., Navy blue (#0A2540), Light gray (#F5F5F5)"
-          />
-          <p className="text-xs text-muted-foreground">
-            List your brand colors with hex codes if known, or describe them (e.g., "dark blue and gold")
-          </p>
+        {/* Brand Colors Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Brand Colors</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Add up to 6 colors with hex codes (e.g., #0A2540) or descriptions
+              </p>
+            </div>
+            {formData.brand_colors.length < 6 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={addColor}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Color
+              </Button>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            {formData.brand_colors.map((color, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <select
+                  value={color.label}
+                  onChange={(e) => handleColorChange(index, "label", e.target.value)}
+                  className="w-32 h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {COLOR_LABELS.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+                <Input
+                  value={color.value}
+                  onChange={(e) => handleColorChange(index, "value", e.target.value)}
+                  placeholder="e.g., #0A2540 or Navy Blue"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeColor(index)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            
+            {formData.brand_colors.length === 0 && (
+              <p className="text-sm text-muted-foreground italic py-2">
+                No colors added yet. Click "Add Color" to get started.
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="brand_fonts">Brand Fonts</Label>
-          <Input
-            id="brand_fonts"
-            value={formData.brand_fonts}
-            onChange={(e) => updateFormData({ brand_fonts: e.target.value })}
-            placeholder="e.g., Montserrat for headings, Open Sans for body"
-          />
-          <p className="text-xs text-muted-foreground">
-            List any specific fonts you use or would like to use
-          </p>
+        {/* Brand Fonts Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Brand Fonts</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Add up to 3 fonts for different purposes
+              </p>
+            </div>
+            {formData.brand_fonts.length < 3 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={addFont}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Font
+              </Button>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            {formData.brand_fonts.map((font, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <select
+                  value={font.purpose}
+                  onChange={(e) => handleFontChange(index, "purpose", e.target.value)}
+                  className="w-36 h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {FONT_PURPOSES.map((purpose) => (
+                    <option key={purpose} value={purpose}>{purpose}</option>
+                  ))}
+                </select>
+                <Input
+                  value={font.name}
+                  onChange={(e) => handleFontChange(index, "name", e.target.value)}
+                  placeholder="e.g., Montserrat, Open Sans"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFont(index)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            
+            {formData.brand_fonts.length === 0 && (
+              <p className="text-sm text-muted-foreground italic py-2">
+                No fonts added yet. Click "Add Font" to get started.
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
