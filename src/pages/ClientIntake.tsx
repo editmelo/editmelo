@@ -296,6 +296,12 @@ const ClientIntake = () => {
               <Button type="submit" className="w-full" disabled={isVerifying}>
                 {isVerifying ? "Verifying..." : "Access Intake Form"}
               </Button>
+              <a
+                href="/"
+                className="block text-center text-sm text-muted-foreground hover:underline mt-3"
+              >
+                ← Back to website
+              </a>
             </form>
           </CardContent>
         </Card>
