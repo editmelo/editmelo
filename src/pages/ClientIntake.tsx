@@ -298,9 +298,9 @@ const ClientIntake = () => {
               </Button>
               <a
                 href="/"
-                className="block text-center text-sm text-muted-foreground hover:underline mt-3"
+                className="block text-center text-xs text-muted-foreground hover:underline mt-3"
               >
-                ← Back to website
+                Back to website
               </a>
             </form>
           </CardContent>
