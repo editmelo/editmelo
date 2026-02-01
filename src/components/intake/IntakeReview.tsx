@@ -61,7 +61,25 @@ const FileList = ({ files, label }: { files: { name: string; url: string; type: 
   );
 };
 
+// Helper to format colors array as string for display
+const formatColors = (colors: { label: string; value: string }[]): string | undefined => {
+  const filtered = colors.filter(c => c.value);
+  if (filtered.length === 0) return undefined;
+  return filtered.map(c => `${c.label}: ${c.value}`).join(", ");
+};
+
+// Helper to format fonts array as string for display
+const formatFonts = (fonts: { purpose: string; name: string }[]): string | undefined => {
+  const filtered = fonts.filter(f => f.name);
+  if (filtered.length === 0) return undefined;
+  return filtered.map(f => `${f.purpose}: ${f.name}`).join(", ");
+};
+
 const IntakeReview = ({ formData }: Props) => {
+  const colorsDisplay = formatColors(formData.brand_colors);
+  const fontsDisplay = formatFonts(formData.brand_fonts);
+  const hasBrandIdentity = colorsDisplay || fontsDisplay || formData.brand_personality || formData.inspiration_websites || formData.logo_files.length > 0;
+
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-4 text-center">
@@ -90,11 +108,11 @@ const IntakeReview = ({ formData }: Props) => {
         </Section>
 
         {/* Brand Identity */}
-        {(formData.brand_colors || formData.brand_fonts || formData.brand_personality || formData.inspiration_websites || formData.logo_files.length > 0) && (
+        {hasBrandIdentity && (
           <Section icon={Palette} title="Brand Identity">
             <FileList files={formData.logo_files} label="Logo Files" />
-            <Field label="Colors" value={formData.brand_colors} />
-            <Field label="Fonts" value={formData.brand_fonts} />
+            <Field label="Colors" value={colorsDisplay} />
+            <Field label="Fonts" value={fontsDisplay} />
             <Field label="Personality" value={formData.brand_personality} />
             <Field label="Inspiration" value={formData.inspiration_websites} />
           </Section>
