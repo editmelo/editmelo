@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle, ArrowLeft, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.png";
 
-const INTAKE_PASSWORD = "thirteen";
+// Password verification is handled server-side via edge function
 
 // Step components
 import IntakeWelcome from "@/components/intake/IntakeWelcome";
@@ -114,19 +114,40 @@ const ClientIntake = () => {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.toLowerCase().trim() === INTAKE_PASSWORD) {
-      setIsAuthenticated(true);
-      setPasswordError("");
-    } else {
-      setPasswordError("Incorrect password. Please try again.");
+    setIsVerifying(true);
+    setPasswordError("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-intake-password", {
+        body: { password },
+      });
+
+      if (error) {
+        console.error("Password verification error:", error);
+        setPasswordError("Unable to verify password. Please try again.");
+        return;
+      }
+
+      if (data?.success) {
+        setIsAuthenticated(true);
+        setPasswordError("");
+      } else {
+        setPasswordError(data?.error || "Incorrect password. Please try again.");
+      }
+    } catch (err) {
+      console.error("Password verification failed:", err);
+      setPasswordError("Unable to verify password. Please try again.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -272,8 +293,8 @@ const ClientIntake = () => {
                   <p className="text-sm text-destructive">{passwordError}</p>
                 )}
               </div>
-              <Button type="submit" className="w-full">
-                Access Intake Form
+              <Button type="submit" className="w-full" disabled={isVerifying}>
+                {isVerifying ? "Verifying..." : "Access Intake Form"}
               </Button>
             </form>
           </CardContent>
