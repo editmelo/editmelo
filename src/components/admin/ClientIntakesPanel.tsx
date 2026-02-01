@@ -54,6 +54,7 @@ const STATUS_CONFIG: Record<IntakeStatus, { label: string; variant: "secondary" 
 interface UploadedFile {
   name: string;
   url: string;
+  path?: string; // File path in storage for signed URL generation
   type: string;
 }
 
@@ -1084,6 +1085,79 @@ const Field = ({ label, value }: { label: string; value: string | null | undefin
 };
 
 const FileListDisplay = ({ files, label }: { files: UploadedFile[]; label: string }) => {
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchSignedUrls = async () => {
+      if (!files || files.length === 0) return;
+      
+      // Extract file paths from the files
+      const filePaths = files
+        .map((f) => f.path || extractPathFromUrl(f.url))
+        .filter((p): p is string => !!p);
+      
+      if (filePaths.length === 0) return;
+      
+      setIsLoading(true);
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.access_token) {
+          console.error("No auth session for signed URLs");
+          return;
+        }
+
+        const response = await supabase.functions.invoke("get-signed-urls", {
+          body: { filePaths, bucket: "intake-assets", expiresIn: 86400 },
+        });
+
+        if (response.error) {
+          console.error("Error fetching signed URLs:", response.error);
+          toast({
+            title: "Error loading files",
+            description: "Could not load secure file URLs.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (response.data?.signedUrls) {
+          setSignedUrls(response.data.signedUrls);
+        }
+      } catch (error) {
+        console.error("Failed to fetch signed URLs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSignedUrls();
+  }, [files, toast]);
+
+  // Helper to extract path from old public URLs
+  const extractPathFromUrl = (url: string): string | null => {
+    if (!url) return null;
+    // Handle public URLs like: .../storage/v1/object/public/intake-assets/path/file.ext
+    const publicMatch = url.match(/\/storage\/v1\/object\/public\/intake-assets\/(.+)/);
+    if (publicMatch) return publicMatch[1];
+    // Handle signed URLs: .../storage/v1/object/sign/intake-assets/path/file.ext?...
+    const signedMatch = url.match(/\/storage\/v1\/object\/sign\/intake-assets\/([^?]+)/);
+    if (signedMatch) return signedMatch[1];
+    // If it's just a path, return it
+    if (!url.startsWith("http")) return url;
+    return null;
+  };
+
+  const getFileUrl = (file: UploadedFile): string => {
+    const path = file.path || extractPathFromUrl(file.url);
+    if (path && signedUrls[path]) {
+      return signedUrls[path];
+    }
+    // Fallback to original URL (may not work for private bucket)
+    return file.url;
+  };
+  
   if (!files || files.length === 0) return null;
   
   const isImage = (type: string) => type.startsWith("image/");
@@ -1091,27 +1165,37 @@ const FileListDisplay = ({ files, label }: { files: UploadedFile[]; label: strin
   return (
     <div className="space-y-2">
       <span className="font-medium text-muted-foreground">{label}:</span>
-      <div className="flex flex-wrap gap-2">
-        {files.map((file, i) => (
-          <a
-            key={i}
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 border border-border hover:border-primary transition-colors"
-          >
-            {isImage(file.type) ? (
-              <img src={file.url} alt={file.name} className="h-8 w-8 rounded object-cover" />
-            ) : file.type.includes("pdf") ? (
-              <File className="h-4 w-4 text-destructive" />
-            ) : (
-              <FileImage className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-xs truncate max-w-[100px]">{file.name}</span>
-            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-          </a>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading files...
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {files.map((file, i) => {
+            const fileUrl = getFileUrl(file);
+            return (
+              <a
+                key={i}
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 border border-border hover:border-primary transition-colors"
+              >
+                {isImage(file.type) ? (
+                  <img src={fileUrl} alt={file.name} className="h-8 w-8 rounded object-cover" />
+                ) : file.type.includes("pdf") ? (
+                  <File className="h-4 w-4 text-destructive" />
+                ) : (
+                  <FileImage className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="text-xs truncate max-w-[100px]">{file.name}</span>
+                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+              </a>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

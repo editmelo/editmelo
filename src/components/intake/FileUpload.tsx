@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 interface UploadedFile {
   name: string;
   url: string;
+  path?: string; // File path in storage for signed URL generation
   type: string;
 }
 
@@ -80,13 +81,16 @@ const FileUpload = ({
         continue;
       }
 
-      const { data: urlData } = supabase.storage
+      // Store the file path for later signed URL generation
+      // For preview during upload, generate a temporary signed URL
+      const { data: signedUrlData } = await supabase.storage
         .from("intake-assets")
-        .getPublicUrl(data.path);
+        .createSignedUrl(data.path, 3600); // 1 hour for preview during form completion
 
       newFiles.push({
         name: file.name,
-        url: urlData.publicUrl,
+        url: signedUrlData?.signedUrl || data.path, // Use signed URL for preview, fallback to path
+        path: data.path, // Store the path for database storage
         type: file.type,
       });
     }
