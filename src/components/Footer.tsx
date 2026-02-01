@@ -1,4 +1,5 @@
-import { Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Instagram, Facebook, Linkedin } from "lucide-react";
+import XIcon from "@/components/icons/XIcon";
 import logo from "@/assets/logo.png";
 
 const Footer = () => {
@@ -7,7 +8,7 @@ const Footer = () => {
   const socialLinks = [
     { icon: Instagram, href: "https://instagram.com/editmelo", label: "Instagram" },
     { icon: Facebook, href: "https://www.facebook.com/editmelollc/", label: "Facebook" },
-    { icon: Twitter, href: "https://twitter.com/editmelo", label: "Twitter" },
+    { icon: XIcon, href: "https://x.com/editmelo", label: "X" },
     { icon: Linkedin, href: "https://linkedin.com/company/editmelo", label: "LinkedIn" },
   ];
 

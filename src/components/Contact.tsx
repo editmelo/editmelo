@@ -84,8 +84,8 @@ const Contact = () => {
                 href="mailto:info@editmelo.com"
                 className="flex items-center gap-4 p-4 bg-primary-foreground/10 rounded-xl hover:bg-primary-foreground/15 transition-colors group"
               >
-                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Mail className="w-6 h-6 text-accent" />
+                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Mail className="w-6 h-6 text-accent-foreground" />
                 </div>
                 <div>
                   <p className="font-semibold">Email Us</p>
