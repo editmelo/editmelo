@@ -58,13 +58,68 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validate required fields
     if (!data.contact_name || !data.contact_email || !data.business_name) {
-      console.error("Missing required fields:", { 
-        contact_name: data.contact_name, 
-        contact_email: data.contact_email, 
-        business_name: data.business_name 
-      });
+      console.error("Missing required fields");
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Server-side length validation
+    if (data.contact_name.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Contact name is too long (max 100 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.contact_email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "Email is too long (max 255 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.contact_phone && data.contact_phone.length > 20) {
+      return new Response(
+        JSON.stringify({ error: "Phone number is too long (max 20 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.business_name.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Business name is too long (max 200 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.business_description && data.business_description.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: "Business description is too long (max 2000 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.industry && data.industry.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Industry is too long (max 100 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (data.location && data.location.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Location is too long (max 200 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.contact_email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
