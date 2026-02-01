@@ -17,6 +17,17 @@ interface LeadNotificationRequest {
   companyDescription: string;
 }
 
+// HTML escape function to prevent injection attacks
+function escapeHtml(unsafe: string): string {
+  if (!unsafe) return "";
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -36,26 +47,33 @@ const handler = async (req: Request): Promise<Response> => {
 
     const notificationEmail = "lauren@editmelo.com";
 
+    // Escape all user-provided content
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone || "Not provided");
+    const safeCompanyName = escapeHtml(companyName);
+    const safeCompanyDescription = escapeHtml(companyDescription);
+
     const emailResponse = await resend.emails.send({
       from: "Lead Notifications <onboarding@resend.dev>",
       to: [notificationEmail],
-      subject: `🎉 New Lead: ${companyName}`,
+      subject: `🎉 New Lead: ${safeCompanyName}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #1a1a1a; border-bottom: 2px solid #f97316; padding-bottom: 10px;">New Lead Submitted!</h1>
           
           <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h2 style="color: #374151; margin-top: 0;">Contact Information</h2>
-            <p style="margin: 8px 0;"><strong>Name:</strong> ${name}</p>
-            <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-            <p style="margin: 8px 0;"><strong>Phone:</strong> ${phone || "Not provided"}</p>
+            <p style="margin: 8px 0;"><strong>Name:</strong> ${safeName}</p>
+            <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
+            <p style="margin: 8px 0;"><strong>Phone:</strong> ${safePhone}</p>
           </div>
           
           <div style="background: #fff7ed; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #f97316;">
             <h2 style="color: #374151; margin-top: 0;">Business Details</h2>
-            <p style="margin: 8px 0;"><strong>Company:</strong> ${companyName}</p>
+            <p style="margin: 8px 0;"><strong>Company:</strong> ${safeCompanyName}</p>
             <p style="margin: 8px 0;"><strong>Description:</strong></p>
-            <p style="margin: 8px 0; color: #4b5563;">${companyDescription}</p>
+            <p style="margin: 8px 0; color: #4b5563;">${safeCompanyDescription}</p>
           </div>
           
           <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
