@@ -65,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    const isValid = password.toLowerCase().trim() === intakePassword.toLowerCase().trim();
+    const isValid = password.trim() === intakePassword.trim();
 
     if (isValid) {
       console.log("Intake password verified successfully");
