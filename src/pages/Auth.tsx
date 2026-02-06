@@ -15,7 +15,6 @@ const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +22,7 @@ const Auth = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { user, isLoading, signIn, signUp } = useAuth();
+  const { user, isLoading, signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -58,50 +57,26 @@ const Auth = () => {
     setIsSubmitting(true);
     
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              title: "Login Failed",
-              description: "Invalid email or password. Please try again.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Login Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "Login Failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
         } else {
           toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
+            title: "Login Failed",
+            description: error.message,
+            variant: "destructive",
           });
         }
       } else {
-        const { error } = await signUp(email, password);
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              title: "Sign Up Failed",
-              description: "This email is already registered. Try logging in instead.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Sign Up Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: "Check your email",
-            description: "We sent you a confirmation link. Please verify your email to continue.",
-          });
-        }
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -161,13 +136,9 @@ const Auth = () => {
 
         <Card className="shadow-elevated">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-heading">
-              {isLogin ? "Admin Login" : "Create Account"}
-            </CardTitle>
+            <CardTitle className="text-2xl font-heading">Admin Login</CardTitle>
             <CardDescription>
-              {isLogin
-                ? "Sign in to access the admin dashboard"
-                : "Create an admin account"}
+              Sign in to access the admin dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -227,12 +198,10 @@ const Auth = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isLogin ? "Signing in..." : "Creating account..."}
+                    Signing in...
                   </>
-                ) : isLogin ? (
-                  "Sign In"
                 ) : (
-                  "Create Account"
+                  "Sign In"
                 )}
               </Button>
             </form>
@@ -278,20 +247,6 @@ const Auth = () => {
               Continue with Google
             </Button>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isLogin
-                  ? "Need an account? Sign up"
-                  : "Already have an account? Sign in"}
-              </button>
-            </div>
           </CardContent>
         </Card>
       </div>
