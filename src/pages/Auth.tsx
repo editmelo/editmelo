@@ -22,7 +22,8 @@ const Auth = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { user, isLoading, signIn } = useAuth();
+  const { user, isLoading, signIn, signUp } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,26 +58,19 @@ const Auth = () => {
     setIsSubmitting(true);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Login Failed",
-            description: "Invalid email or password. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Login Failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: isSignUp ? "Sign Up Failed" : "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
+          title: isSignUp ? "Account created!" : "Welcome back!",
+          description: isSignUp ? "You can now sign in." : "You have successfully logged in.",
         });
+        if (isSignUp) setIsSignUp(false);
       }
     } finally {
       setIsSubmitting(false);
@@ -136,9 +130,9 @@ const Auth = () => {
 
         <Card className="shadow-elevated">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-heading">Admin Login</CardTitle>
+            <CardTitle className="text-2xl font-heading">{isSignUp ? "Create Account" : "Admin Login"}</CardTitle>
             <CardDescription>
-              Sign in to access the admin dashboard
+              {isSignUp ? "Create your admin account" : "Sign in to access the admin dashboard"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -198,11 +192,20 @@ const Auth = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    {isSignUp ? "Creating account..." : "Signing in..."}
                   </>
                 ) : (
-                  "Sign In"
+                  isSignUp ? "Create Account" : "Sign In"
                 )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
               </Button>
             </form>
 
