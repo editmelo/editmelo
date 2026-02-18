@@ -4,10 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
+import ClientIntake from "./pages/ClientIntake";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import ClientIntake from "./pages/ClientIntake";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -19,10 +18,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<ClientIntake />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/client-intake" element={<ClientIntake />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
