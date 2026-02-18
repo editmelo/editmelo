@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface UploadedFile {
   name: string;
   url: string;
-  path?: string; // File path in storage for signed URL generation
+  path?: string;
   type: string;
 }
 
@@ -54,7 +54,6 @@ const FileUpload = ({
     const newFiles: UploadedFile[] = [];
 
     for (const file of filesToUpload) {
-      // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -64,14 +63,16 @@ const FileUpload = ({
         continue;
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Upload via edge function (uses service role, bypasses RLS)
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", folder);
 
-      const { data, error } = await supabase.storage
-        .from("intake-assets")
-        .upload(fileName, file);
+      const { data, error } = await supabase.functions.invoke("upload-intake-asset", {
+        body: formData,
+      });
 
-      if (error) {
+      if (error || !data) {
         console.error("Upload error:", error);
         toast({
           title: "Upload failed",
@@ -81,17 +82,11 @@ const FileUpload = ({
         continue;
       }
 
-      // Store the file path for later signed URL generation
-      // For preview during upload, generate a temporary signed URL
-      const { data: signedUrlData } = await supabase.storage
-        .from("intake-assets")
-        .createSignedUrl(data.path, 3600); // 1 hour for preview during form completion
-
       newFiles.push({
-        name: file.name,
-        url: signedUrlData?.signedUrl || data.path, // Use signed URL for preview, fallback to path
-        path: data.path, // Store the path for database storage
-        type: file.type,
+        name: data.name || file.name,
+        url: data.signedUrl || data.path,
+        path: data.path,
+        type: data.type || file.type,
       });
     }
 
@@ -137,7 +132,6 @@ const FileUpload = ({
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
 
-      {/* Upload Zone */}
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
@@ -178,7 +172,6 @@ const FileUpload = ({
         )}
       </div>
 
-      {/* File List */}
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file, index) => (

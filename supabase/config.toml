@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.get-signed-urls]
 verify_jwt = false
+
+[functions.upload-intake-asset]
+verify_jwt = false
