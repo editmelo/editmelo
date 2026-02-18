@@ -125,7 +125,7 @@ const Admin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => window.location.href = "https://www.editmelo.com"}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to website
             </Button>
@@ -145,7 +145,7 @@ const Admin = () => {
       <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-4">
-            <a href="/">
+            <a href="https://www.editmelo.com">
               <img src={logo} alt="Edit Me Lo" className="h-10" />
             </a>
             <Badge variant="secondary">Admin Dashboard</Badge>
