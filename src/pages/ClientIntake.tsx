@@ -297,7 +297,7 @@ const ClientIntake = () => {
                 {isVerifying ? "Verifying..." : "Access Intake Form"}
               </Button>
               <a
-                href="/"
+                href="https://www.editmelo.com"
                 className="block text-center text-xs text-muted-foreground hover:underline mt-3"
               >
                 Back to website
@@ -326,7 +326,7 @@ const ClientIntake = () => {
             <p className="text-muted-foreground">
               Any follow-up communication will come directly from Edit Me Lo. If you have questions in the meantime, feel free to reach out.
             </p>
-            <Button onClick={() => window.location.href = "/"} variant="outline">
+            <Button onClick={() => window.location.href = "https://www.editmelo.com"} variant="outline">
               Return to Website
             </Button>
           </CardContent>
@@ -386,7 +386,7 @@ const ClientIntake = () => {
       {/* Header */}
       <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="container flex items-center justify-between py-4">
-          <a href="/">
+          <a href="https://www.editmelo.com">
             <img src={logo} alt="Edit Me Lo" className="h-10" />
           </a>
           <span className="text-sm text-muted-foreground font-medium">
